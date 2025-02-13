@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>MX Record Checker</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <h1>MX Record Checker</h1>
+        
+        <div class="input-modes">
+            <div class="mode-option active" data-mode="single">Single Domain</div>
+            <div class="mode-option" data-mode="bulk">Bulk Domains</div>
+        </div>
+
+        <div class="api-section" style="margin-bottom: 20px;">
+            <div class="checkbox-wrapper">
+                <input type="checkbox" id="checkHistory" name="checkHistory">
+                <label for="checkHistory">Check History Data</label>
+            </div>
+            <div id="apiKeySection" style="display: none;">
+                <div class="api-input-wrapper">
+                    <input type="password" id="apiKeyInput" class="api-input" placeholder="Enter API Key">
+                    <button type="button" class="toggle-password" id="togglePassword">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                </div>
+                <div class="api-key-display" id="apiKeyDisplay" style="display: none;">
+                    Current API Key: <span id="maskedKey"></span>
+                    <button id="changeApiKey" class="button">Change Key</button>
+                </div>
+                <button id="saveApiKey" class="button" disabled>Save Key</button>
+            </div>
+        </div>
+
+        <div class="input-section">
+            <div class="domain-count">Domains: <span id="domainCount">0</span>/20</div>
+            
+            <!-- Single Domain Input -->
+            <div id="singleInputSection">
+                <input type="text" id="singleDomainInput" class="single-input" 
+                    placeholder="Enter domain name">
+                <button id="addSingleDomain" class="button">Add Domain</button>
+            </div>
+
+            <!-- Bulk Domain Input -->
+            <div id="bulkInputSection" style="display: none;">
+                <div class="file-upload-wrapper">
+                    <input type="file" id="csvFile" accept=".csv" class="file-upload">
+                    <label for="csvFile" class="file-label" id="csvFileLabel">Choose CSV file</label>
+                    <span id="fileName">No file chosen</span>
+                </div>
+                <button id="uploadCSV" class="button" disabled>Upload CSV</button>
+                <p class="help-text">CSV should contain one domain per row (max 20 domains)</p>
+            </div>
+            
+            <!-- Domain List -->
+            <div id="addedDomains" class="domain-list">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <h3>Added Domains:</h3>
+                    <button id="clearList" class="clear-list-button" style="display: none;">Clear List</button>
+                </div>
+                <ul id="domainsList"></ul>
+            </div>
+
+            <div class="button-group">
+                <button id="checkMX" class="button" disabled>Check MX Records</button>
+            </div>
+            <!-- Add this right after the checkMX button -->
+            <div class="progress-container" style="display: none;">
+                <div class="progress-bar">
+                    <div class="progress"></div>
+                </div>
+                <div class="progress-text">Checking domains...</div>
+            </div>
+        </div>
+
+        <div id="results" class="results" style="display: none;">
+            <h3>Results:</h3>
+            <div id="resultsList"></div>
+        </div>
+    </div>
+    <footer class="footer">
+        <div class="footer-content">
+            <span>Developed By TX 2025 @ rootx, Credit to Neo for the idea</span>
+            <div class="social-links">
+                <a href="https://www.linkedin.com/in/ranuka-thilakarathne-47a1a4162/" target="_blank" rel="noopener noreferrer">
+                    <i class="fab fa-linkedin"></i>
+                </a>
+                <a href="https://github.com/ranuka00x" target="_blank" rel="noopener noreferrer">
+                    <i class="fab fa-github"></i>
+                </a>
+            </div>
+        </div>
+    </footer>
+    <script>
+        let domains = new Set();
+        let currentMode = 'single';
+        // Change from localStorage to sessionStorage
+        let apiKey = sessionStorage.getItem('apiKey') || '';
+        let checkHistoryEnabled = false;
+
+        // Add API key handling
+        document.getElementById('checkHistory').addEventListener('change', function(e) {
+            const apiKeySection = document.getElementById('apiKeySection');
+            checkHistoryEnabled = e.target.checked;
+            
+            if (checkHistoryEnabled) {
+                apiKeySection.style.display = 'block';
+                if (!apiKey) {
+                    alert('Please enter an API key to check history data');
+                }
+            } else {
+                apiKeySection.style.display = 'none';
+            }
+        });
+
+        document.getElementById('apiKeyInput').addEventListener('input', function(e) {
+            const saveButton = document.getElementById('saveApiKey');
+            saveButton.disabled = !e.target.value.trim();
+        });
+
+        // Update save API key handler to use sessionStorage
+        document.getElementById('saveApiKey').addEventListener('click', function() {
+            const newApiKey = document.getElementById('apiKeyInput').value.trim();
+            if (newApiKey) {
+                apiKey = newApiKey;
+                sessionStorage.setItem('apiKey', apiKey);
+                updateApiKeyDisplay();
+                alert('API key saved successfully');
+            }
+        });
+
+        // Add this function at the start of your script section
+        function confirmModeSwitch(newMode) {
+            if (domains.size > 0) {
+                return confirm('Switching modes will clear all added domains and results. Do you want to continue?');
+            }
+            return true;
+        }
+
+        // Update the mode switching event listener
+        document.querySelectorAll('.mode-option').forEach(option => {
+            option.addEventListener('click', function() {
+                const newMode = this.dataset.mode;
+                
+                // Don't do anything if clicking the already active mode
+                if (currentMode === newMode) return;
+                
+                // Check if we need confirmation
+                if (confirmModeSwitch(newMode)) {
+                    // Update mode selection visually
+                    document.querySelectorAll('.mode-option').forEach(opt => 
+                        opt.classList.remove('active')
+                    );
+                    this.classList.add('active');
+                    
+                    // Update mode and clear everything
+                    currentMode = newMode;
+                    domains.clear();
+                    updateDomainCount();
+                    updateUI();
+                    
+                    // Clear results
+                    document.getElementById('results').style.display = 'none';
+                    document.getElementById('resultsList').innerHTML = '';
+                }
+            });
+        });
+
+        function updateUI() {
+            document.getElementById('singleInputSection').style.display = 
+                currentMode === 'single' ? 'block' : 'none';
+            document.getElementById('bulkInputSection').style.display = 
+                currentMode === 'bulk' ? 'block' : 'none';
+            document.getElementById('domainsList').innerHTML = '';
+            document.getElementById('clearList').style.display = 'none';
+            document.getElementById('addSingleDomain').disabled = false;
+            document.getElementById('csvFileLabel').classList.remove('disabled');
+            document.getElementById('csvFile').disabled = false;
+            document.getElementById('uploadCSV').disabled = true;
+        }
+
+        // Single domain handling
+        document.getElementById('addSingleDomain').addEventListener('click', function() {
+            const domain = document.getElementById('singleDomainInput').value.trim();
+            if (domain) {
+                domains.add(domain);
+                document.getElementById('singleDomainInput').value = '';
+                document.getElementById('addSingleDomain').disabled = true;
+                updateDomainsList();
+                updateDomainCount();
+            }
+        });
+
+        // CSV file handling
+        document.getElementById('csvFile').addEventListener('change', function(e) {
+            const fileName = e.target.files[0]?.name || 'No file chosen';
+            document.getElementById('fileName').textContent = fileName;
+            document.getElementById('uploadCSV').disabled = !e.target.files[0];
+        });
+
+        document.getElementById('uploadCSV').addEventListener('click', function() {
+            const fileInput = document.getElementById('csvFile');
+            const file = fileInput.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const text = e.target.result;
+                const lines = text.split(/\r?\n/).filter(line => line.trim());
+                
+                if (lines.length > 20) {
+                    alert('CSV contains more than 20 domains. Please reduce the number of domains.');
+                    return;
+                }
+
+                domains.clear();
+                lines.forEach(domain => domains.add(domain.trim()));
+                updateDomainsList();
+                updateDomainCount();
+                
+                // Disable file input after successful upload
+                document.getElementById('csvFileLabel').classList.add('disabled');
+                document.getElementById('csvFile').disabled = true;
+                document.getElementById('uploadCSV').disabled = true;
+                document.getElementById('fileName').textContent = 'No file chosen';
+                fileInput.value = '';
+            };
+            reader.readAsText(file);
+        });
+
+        function deleteDomain(domain) {
+            domains.delete(domain);
+            updateDomainsList();
+            updateDomainCount();
+            
+            if (currentMode === 'single') {
+                document.getElementById('addSingleDomain').disabled = false;
+            } else if (domains.size === 0) {
+                document.getElementById('csvFileLabel').classList.remove('disabled');
+                document.getElementById('csvFile').disabled = false;
+            }
+        }
+
+        document.getElementById('clearList').addEventListener('click', function() {
+            domains.clear();
+            updateDomainsList();
+            updateDomainCount();
+            
+            if (currentMode === 'single') {
+                document.getElementById('addSingleDomain').disabled = false;
+            } else {
+                document.getElementById('csvFileLabel').classList.remove('disabled');
+                document.getElementById('csvFile').disabled = false;
+            }
+        });
+
+        function updateDomainsList() {
+            const list = document.getElementById('domainsList');
+            list.innerHTML = '';
+            domains.forEach(domain => {
+                const li = document.createElement('li');
+                li.innerHTML = `
+                    <span>${domain}</span>
+                    <button class="delete-button" onclick="deleteDomain('${domain}')">Delete</button>
+                `;
+                list.appendChild(li);
+            });
+            
+            // Only show Clear List button in bulk mode
+            const clearListButton = document.getElementById('clearList');
+            clearListButton.style.display = 
+                (currentMode === 'bulk' && domains.size > 0) ? 'block' : 'none';
+        }
+
+        function updateDomainCount() {
+            document.getElementById('domainCount').textContent = domains.size;
+            document.getElementById('checkMX').disabled = domains.size === 0;
+        }
+
+        // Replace the existing checkMX event listener
+        document.getElementById('checkMX').addEventListener('click', function() {
+            if (checkHistoryEnabled && !apiKey) {
+                alert('Please enter and save an API key to check history data');
+                return;
+            }
+
+            const checkMXButton = document.getElementById('checkMX');
+            const originalText = checkMXButton.textContent;
+            checkMXButton.disabled = true;
+            
+            const progressContainer = document.querySelector('.progress-container');
+            const progressBar = document.querySelector('.progress');
+            const progressText = document.querySelector('.progress-text');
+            
+            // Show progress bar
+            progressContainer.style.display = 'block';
+            progressBar.style.width = '0%';
+            
+            const totalDomains = domains.size;
+            progressText.textContent = `Checking (0/${totalDomains})...`;
+
+            const resultsDiv = document.getElementById('results');
+            const resultsList = document.getElementById('resultsList');
+            resultsList.innerHTML = '';
+            resultsDiv.style.display = 'block';
+
+            fetch('/check_mx', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    domains: Array.from(domains),
+                    checkHistory: checkHistoryEnabled,
+                    apiKey: apiKey
+                })
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                resultsList.innerHTML = '';
+                let processed = 0;
+                Object.entries(data).forEach(([domain, result]) => {
+                    processed++;
+                    // Update progress bar and text
+                    const progress = (processed / totalDomains) * 100;
+                    progressBar.style.width = `${progress}%`;
+                    progressText.textContent = `Checking (${processed}/${totalDomains})...`;
+
+                    const resultDiv = document.createElement('div');
+                    resultDiv.style.padding = '10px';
+                    resultDiv.style.borderBottom = '1px solid #dee2e6';
+
+                    let html = `<strong>${domain}</strong>:<br>`;
+                    html += `<span style="color: ${result.current.includes('found') ? '#28a745' : '#dc3545'}">
+                        Current Status: ${result.current}
+                    </span>`;
+
+                    if (result.history) {
+                        const historyColor = result.history.includes('Previously used Google MX') ? '#ffa500' : '#6c757d';
+                        html += `<br><span style="color: ${historyColor}; font-size: 0.9em">
+                            ${result.history}
+                        </span>`;
+                    }
+
+                    resultDiv.innerHTML = html;
+                    resultsList.appendChild(resultDiv);
+                });
+            })
+            .catch(error => {
+                resultsList.innerHTML = `
+                    <div class="error">
+                        Error checking MX records: ${error.message}
+                    </div>
+                `;
+            })
+            .finally(() => {
+                checkMXButton.disabled = false;
+                checkMXButton.textContent = originalText;
+                // Hide progress bar after completion
+                setTimeout(() => {
+                    progressContainer.style.display = 'none';
+                    progressBar.style.width = '0%';
+                }, 1000);
+            });
+        });
+
+        // Add API key functions here
+        function updateApiKeyDisplay() {
+            const display = document.getElementById('apiKeyDisplay');
+            const maskedKey = document.getElementById('maskedKey');
+            const apiKeyInput = document.getElementById('apiKeyInput');
+            const saveButton = document.getElementById('saveApiKey');
+
+            if (apiKey) {
+                display.style.display = 'block';
+                apiKeyInput.style.display = 'none';
+                saveButton.style.display = 'none';
+                maskedKey.textContent = '•••••' + apiKey.slice(-5);
+            } else {
+                display.style.display = 'none';
+                apiKeyInput.style.display = 'block';
+                saveButton.style.display = 'block';
+            }
+        }
+
+        // Add toggle password visibility
+        document.getElementById('togglePassword').addEventListener('click', function() {
+            const apiKeyInput = document.getElementById('apiKeyInput');
+            const icon = this.querySelector('i');
+            
+            if (apiKeyInput.type === 'password') {
+                apiKeyInput.type = 'text';
+                icon.classList.remove('fa-eye');
+                icon.classList.add('fa-eye-slash');
+            } else {
+                apiKeyInput.type = 'password';
+                icon.classList.remove('fa-eye-slash');
+                icon.classList.add('fa-eye');
+            }
+        });
+
+        // Update save API key handler
+        document.getElementById('saveApiKey').addEventListener('click', function() {
+            const newApiKey = document.getElementById('apiKeyInput').value.trim();
+            if (newApiKey) {
+                apiKey = newApiKey;
+                sessionStorage.setItem('apiKey', apiKey);
+                updateApiKeyDisplay();
+                alert('API key saved successfully.');
+            }
+        });
+
+        // Add change API key handler
+        document.getElementById('changeApiKey').addEventListener('click', function() {
+            const apiKeyInput = document.getElementById('apiKeyInput');
+            const saveButton = document.getElementById('saveApiKey');
+            const display = document.getElementById('apiKeyDisplay');
+            
+            apiKeyInput.value = '';
+            apiKeyInput.style.display = 'block';
+            saveButton.style.display = 'block';
+            display.style.display = 'none';
+        });
+
+        // Initialize API key display
+        document.addEventListener('DOMContentLoaded', function() {
+            updateApiKeyDisplay();
+        });
+
+    </script>
+</body>
+</html>
