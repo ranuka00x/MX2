@@ -23,12 +23,22 @@ pipeline {
             }
         }
 
-        stage('SonarQube Analysis') {
-            def scannerHome = tool 'mysonar';
-            withSonarQubeEnv() {
-            sh "${scannerHome}/bin/sonar-scanner"
+        stage("code quality") {
+            steps {
+                script {
+                    def scannerHome = tool 'mysonar';
+                    withSonarQubeEnv() {
+                        sh "${scannerHome}/bin/sonar-scanner"
+                    }
+                }
             }
-        }
+        }   
+//        stage('SonarQube Analysis') {
+//            def scannerHome = tool 'mysonar';
+//            withSonarQubeEnv() {
+//            sh "${scannerHome}/bin/sonar-scanner"
+//            }
+//        }
 
         stage('Build Docker Image') {
             steps {
