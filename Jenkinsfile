@@ -22,6 +22,8 @@ pipeline{
         stage('Test'){
             steps{
                 echo 'Testing the project'
+                sh 'node --version'
+                sh 'npm --version'
             }
         }
         stage('Deploy'){
