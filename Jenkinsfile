@@ -6,7 +6,6 @@ pipeline{
     environment{
         registry = 'kadawara/mx'
         DOCKERHUB_CREDENTIALS = 'dockerhub'
-        registryUrl = 'https://index.docker.io/v1/'
         }
     stages{
         stage('Checkout'){
