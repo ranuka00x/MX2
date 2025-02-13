@@ -6,7 +6,7 @@ pipeline{
     environment{
         registry = 'kadawara/mx'
         registryCredential = 'dockerhub'
-    }
+        }
     stages{
         stage('Checkout'){
             steps{
