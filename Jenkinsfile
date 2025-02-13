@@ -3,7 +3,7 @@ pipeline{
     stages{
         stage('Checkout'){
             steps{
-                echo 'Checking out the project'
+                echo 'Checking out the projects'
                 git branch: 'main', credentialsId: 'github-api', url: 'https://github.com/ranuka00x/MX2.git'
             }
         }
