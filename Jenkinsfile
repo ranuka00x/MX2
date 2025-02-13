@@ -14,7 +14,7 @@ pipeline {
                 git branch: 'main', credentialsId: 'github-api', url: 'https://github.com/ranuka00x/MX2.git'
             }
         }
-        stage('Requirements Testing') {
+        stage('Py Requirements Testing') {
             steps {
                 echo 'Building the project'
                 sh 'python3 -m venv venv'
@@ -22,6 +22,14 @@ pipeline {
                 sh './venv/bin/pip install -r requirements.txt'
             }
         }
+
+        stage('SonarQube Analysis') {
+            def scannerHome = tool 'SonarScanner';
+            withSonarQubeEnv() {
+            sh "${scannerHome}/bin/sonar-scanner"
+            }
+        }
+
         stage('Build Docker Image') {
             steps {
                 script {
@@ -30,6 +38,14 @@ pipeline {
                 }
             }   
         }
+
+        stage('Test') {
+            steps {
+                echo 'Testing the project'
+                sh 'python3 -m pytest'
+            }
+        }
+
         stage('Deploy') {
             steps {
                 script {
