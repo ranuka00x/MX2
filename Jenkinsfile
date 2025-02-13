@@ -41,4 +41,21 @@ pipeline {
             }
         }
     }
+    post {
+        always {
+            echo 'Cleaning up workspace and Docker images'
+            // Clean up any images created during the build
+            sh 'docker rmi $(docker images -q ${registry} || true) || true'
+            // Remove any dangling images
+            sh 'docker image prune -f'
+            // Clean workspace
+            cleanWs()
+        }
+        success {
+            echo 'Pipeline succeeded!'
+        }
+        failure {
+            echo 'Pipeline failed!'
+        }
+    }
 }
