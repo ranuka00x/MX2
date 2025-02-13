@@ -27,7 +27,7 @@ pipeline{
             steps{
                 script{
                 echo 'Building the docker image'
-                docker.build('${registry}:latest)')
+                docker.build("${registry}:latest")
                 }
             }   
             
