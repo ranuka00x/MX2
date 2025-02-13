@@ -9,8 +9,11 @@ pipeline{
         }
         stage('Build'){
             steps{
-                echo 'Building the projectd'
-                
+                echo 'Building the project'
+                // Build Docker image
+                script {
+                    docker.build("${DOCKER_IMAGE}:${DOCKER_TAG}")
+                }
             }
         }
         stage('Test'){
