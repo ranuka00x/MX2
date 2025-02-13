@@ -25,14 +25,12 @@ pipeline{
         }
         stage('Build Docker Image'){
             steps{
+                script{
                 echo 'Building the docker image'
                 docker.build('${registry}:latest)')
+                }
             }   
-            steps{
-                echo 'Testing the project'
-                sh 'node --version'
-                sh 'npm --version'
-            }
+            
         }
         stage('Deploy'){
             steps{
