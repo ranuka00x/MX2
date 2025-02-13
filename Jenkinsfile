@@ -26,7 +26,7 @@ pipeline{
         stage('Build Docker Image'){
             steps{
                 echo 'Building the docker image'
-                docker.build('${registry}:latest
+                docker.build('${registry}:latest)')
             }   
             steps{
                 echo 'Testing the project'
