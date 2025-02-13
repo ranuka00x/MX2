@@ -3,6 +3,10 @@ pipeline{
     tools{
         nodejs 'NodeJS'
         }
+    environment{
+        registry = 'kadawara/mx'
+        registryCredential = 'dockerhub'
+    }
     stages{
         stage('Checkout'){
             steps{
@@ -10,7 +14,7 @@ pipeline{
                 git branch: 'main', credentialsId: 'github-api', url: 'https://github.com/ranuka00x/MX2.git'
             }
         }
-        stage('Build'){
+        stage('Requirements Testing'){
             steps{
                 echo 'Building the project'
                 sh 'python3 -m venv venv'
@@ -19,7 +23,11 @@ pipeline{
  
             }
         }
-        stage('Test'){
+        stage('Build Docker Image'){
+            steps{
+                echo 'Building the docker image'
+                docker.build('${registry}:latest
+            }   
             steps{
                 echo 'Testing the project'
                 sh 'node --version'
