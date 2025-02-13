@@ -5,7 +5,8 @@ pipeline{
         }
     environment{
         registry = 'kadawara/mx'
-        registryCredential = 'dockerhub'
+        DOCKERHUB_CREDENTIALS = 'dockerhub'
+        registryUrl = 'https://index.docker.io/v1/'
         }
     stages{
         stage('Checkout'){
@@ -27,14 +28,20 @@ pipeline{
             steps{
                 script{
                 echo 'Building the docker image'
-                docker.build("${registry}:latest")
+                dockerimage = docker.build("${registry}:latest")
                 }
             }   
             
         }
         stage('Deploy'){
             steps{
+                script{
                 echo 'Deploying the project'
+                docker.withRegistry('https://registry.hub.docker.com', DOCKERHUB_CREDENTIALS){
+                    dockerimage.push('latest')
+                    }
+                }
+                }
             }
         }
     }
