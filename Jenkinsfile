@@ -27,19 +27,35 @@ pipeline {
 
         stage('SonarQube Analysis') {
             steps {
-                withCredentials([string(credentialsId: 'complete-cicd-02-token', variable: 'SONAR_TOKEN')]) {
-                    withSonarQubeEnv('SonarQube') {
-                        sh """
-                            ${SONAR_SCANNER_HOME}/bin/sonar-scanner \
-                            -Dsonar.projectKey=${SONAR_PROJECT_KEY} \
-                            -Dsonar.sources=. \
-                            -Dsonar.host.url=http://20.119.81.146:9000 \
-                            -Dsonar.login=${SONAR_TOKEN}
-                        """
+                timeout(time: 15, unit: 'MINUTES') {
+                    script {
+                        try {
+                            withCredentials([string(credentialsId: 'complete-cicd-02-token', variable: 'SONAR_TOKEN')]) {
+                                withSonarQubeEnv('SonarQube') {
+                                    sh """
+                                        ${SONAR_SCANNER_HOME}/bin/sonar-scanner \
+                                        -Dsonar.projectKey=${SONAR_PROJECT_KEY} \
+                                        -Dsonar.sources=. \
+                                        -Dsonar.host.url=http://20.119.81.146:9000 \
+                                        -Dsonar.token=${SONAR_TOKEN} \
+                                        -Dsonar.sourceEncoding=UTF-8 \
+                                        -Dsonar.python.version=3 \
+                                        -Dsonar.exclusions=venv/**
+                                    """
+                                }
+                            }
+                            // Wait for quality gate
+                            timeout(time: 5, unit: 'MINUTES') {
+                                def qg = waitForQualityGate()
+                                if (qg.status != 'OK') {
+                                    error "Quality gate failed: ${qg.status}"
+                                }
+                            }
+                        } catch (Exception e) {
+                            error "SonarQube analysis failed: ${e.message}"
+                        }
                     }
                 }
-               
-               
             }
         }
    
