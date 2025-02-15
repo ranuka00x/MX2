@@ -6,6 +6,8 @@ pipeline {
     environment {
         registry = 'kadawara/mx'
         DOCKERHUB_CREDENTIALS = 'dockerhub'
+        SONAR_PROJECT_KEY = 'mx'
+        SONAR_SCANNER_HOME = tool 'SonarQubeScanner'
     }
     stages {
         stage('Checkout') {
