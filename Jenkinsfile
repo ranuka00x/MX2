@@ -27,7 +27,7 @@ pipeline {
             steps {
                 echo 'Running SonarQube Analysis'
                
-                }
+               
             }
         }
    
