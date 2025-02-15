@@ -6,6 +6,8 @@ pipeline {
     environment {
         registry = 'kadawara/mx'
         DOCKERHUB_CREDENTIALS = 'dockerhub'
+        SONAR_SCANNER_HOME = tool 'mysonar'
+        SONAR_PROJECT_KEY = 'kadawara_mx'
     }
     stages {
         stage('Checkout') {
@@ -25,12 +27,21 @@ pipeline {
 
         stage("code quality") {
             steps {
-                script {
-                    def scannerHome = tool 'mysonar';
-                    withSonarQubeEnv() {
-                        sh "${scannerHome}/bin/sonar-scanner"
-                    }
+                withRegistry([credentialsId: 'dockerhub', variable: 'DOCKERHUB']) {
+                    sh 'docker pull kadawara/pylint:latest'
+                
+
+                withSonarQubeEnv('mysonar') {
+                    sh """
+                    ${sonar-scanner}/bin/sonar-scanner \
+                    -Dsonar.projectKey=${} \
+                    -Dsonar.sources=. \
+                    -Dsonar.host.url=http://localhost:9000 \
+                    -Dsonar.login=
+                    """
                 }
+                }
+
             }
         }   
 //        stage('SonarQube Analysis') {
