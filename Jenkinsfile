@@ -2,7 +2,7 @@ pipeline {
     agent any
     tools {
         nodejs 'NodeJS'
-        sonarqubeScanner 'SonarQubeScanner'  // Define SonarQube Scanner tool
+        sonarRunner 'SonarQubeScanner'  // Changed from sonarqubeScanner to sonarRunner
     }
     environment {
         registry = 'kadawara/mx'
@@ -81,7 +81,7 @@ pipeline {
     }
     post {
         always {
-            node {  // Add node block to provide required context
+            script {
                 echo 'Cleaning up workspace and Docker images'
                 // Clean up any images created during the build
                 sh 'docker rmi $(docker images -q ${registry} || true) || true'
@@ -92,12 +92,12 @@ pipeline {
             }
         }
         success {
-            node {
+            script {
                 echo 'Pipeline succeeded!'
             }
         }
         failure {
-            node {
+            script {
                 echo 'Pipeline failed!'
             }
         }
