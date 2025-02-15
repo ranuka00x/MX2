@@ -2,12 +2,13 @@ pipeline {
     agent any
     tools {
         nodejs 'NodeJS'
+        sonarqubeScanner 'SonarQubeScanner'  // Define SonarQube Scanner tool
     }
     environment {
         registry = 'kadawara/mx'
         DOCKERHUB_CREDENTIALS = 'dockerhub'
-        SONAR_SCANNER_HOME = tool 'mysonar'
-        SONAR_PROJECT_KEY = 'kadawara_mx'
+        SONAR_SCANNER_HOME = tool 'SonarQubeScanner'
+        SONAR_PROJECT_KEY = 'MX'
     }
     stages {
         stage('Checkout') {
@@ -27,16 +28,16 @@ pipeline {
 
         stage("code quality") {
             steps {
-                withRegistry([credentialsId: 'dockerhub', variable: 'DOCKERHUB']) {
+                withRegistry([credentialsId: 'compelete-cicd-02-token', variable: 'SONAR_TOKEN']) {
                     sh 'docker pull kadawara/pylint:latest'
                 
 
-                withSonarQubeEnv('mysonar') {
+                withSonarQubeEnv('SonarQube') {
                     sh """
-                    ${sonar-scanner}/bin/sonar-scanner \
-                    -Dsonar.projectKey=${} \
+                    ${SONAR_SCANNER_HOME}/bin/sonar-scanner \
+                    -Dsonar.projectKey=${SONAR_PROJECT_KEY} \
                     -Dsonar.sources=. \
-                    -Dsonar.host.url=http://localhost:9000 \
+                    -Dsonar.host.url=http://20.119.81.146:9000/ \
                     -Dsonar.login=
                     """
                 }
@@ -80,19 +81,25 @@ pipeline {
     }
     post {
         always {
-            echo 'Cleaning up workspace and Docker images'
-            // Clean up any images created during the build
-            sh 'docker rmi $(docker images -q ${registry} || true) || true'
-            // Remove any dangling images
-            sh 'docker image prune -f'
-            // Clean workspace
-            cleanWs()
+            node {  // Add node block to provide required context
+                echo 'Cleaning up workspace and Docker images'
+                // Clean up any images created during the build
+                sh 'docker rmi $(docker images -q ${registry} || true) || true'
+                // Remove any dangling images
+                sh 'docker image prune -f'
+                // Clean workspace
+                cleanWs()
+            }
         }
         success {
-            echo 'Pipeline succeeded!'
+            node {
+                echo 'Pipeline succeeded!'
+            }
         }
         failure {
-            echo 'Pipeline failed!'
+            node {
+                echo 'Pipeline failed!'
+            }
         }
     }
 }
