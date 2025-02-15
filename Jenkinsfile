@@ -23,6 +23,13 @@ pipeline {
             }
         }
 
+        stage('SonarQube Analysis') {
+            steps {
+                echo 'Running SonarQube Analysis'
+               
+                }
+            }
+        }
    
 //        stage('SonarQube Analysis') {
 //            def scannerHome = tool 'mysonar';
