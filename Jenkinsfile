@@ -114,7 +114,7 @@ pipeline {
     post {
         always {
             echo 'Waiting 2 minutes before cleanup...'
-            sh 'sleep 120' // 120 seconds = 2 minutes
+            sh 'sleep 30' // 120 seconds = 2 minutes
             echo 'Starting cleanup of workspace and Docker images'
             withCredentials([usernamePassword(credentialsId: DOCKERHUB_CREDENTIALS, passwordVariable: 'DOCKERHUB_PASSWORD', usernameVariable: 'DOCKERHUB_USERNAME')]) {
                 sh '''
@@ -129,8 +129,8 @@ pipeline {
                     # Get all tags
                     TAGS=$(curl -s -H "Authorization: JWT ${TOKEN}" https://hub.docker.com/v2/repositories/${registry}/tags?page_size=100 | jq -r '.results[].name')
 
-                    # Sort tags numerically and keep only tags older than last 10
-                    OLD_TAGS=$(echo "${TAGS}" | sort -nr | tail -n +11)
+                    # Sort tags numerically and keep only tags older than last 10, excluding 'latest'
+                    OLD_TAGS=$(echo "${TAGS}" | grep -v "^latest$" | sort -nr | tail -n +11)
 
                     # Delete old tags
                     for tag in ${OLD_TAGS}; do
