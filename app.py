@@ -11,7 +11,7 @@ def check_google_mx(domain):
         for mx in mx_records:
             if 'google' in str(mx.exchange).lower():
                 return "Google Workspace is found"
-        return "No Google Workspace"
+        return "No Google Workspace."
     except dns.resolver.NXDOMAIN:
         return "Domain does not exist"
     except dns.resolver.NoAnswer:
