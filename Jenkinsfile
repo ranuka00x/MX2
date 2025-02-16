@@ -67,7 +67,7 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 script {
-                    echo 'Building the docker image'
+                    echo 'Building the docker image.'
                     dockerimage = docker.build("${registry}:${BUILD_VERSION}")
 
 
