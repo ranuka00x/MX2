@@ -6,8 +6,9 @@ pipeline {
     environment {
         registry = 'kadawara/mx'
         DOCKERHUB_CREDENTIALS = 'dockerhub'
-        SONAR_PROJECT_KEY = 'mx'
-        SONAR_SCANNER_HOME = tool 'SonarQubeScanner'
+        SONAR_PROJECT_KEY = 'ranuka_mx'
+        SONAR_SCANNER_HOME = tool 'SonarScanner'
+        SONAR_ORGANIZATION = 'ranuka'
     }
     stages {
         stage('Checkout') {
@@ -25,6 +26,22 @@ pipeline {
             }
         }
 
+
+    stages {
+        stage('SonarCloud Analysis') {
+            steps {
+                withSonarQubeEnv('SonarQubeServer') {
+                    sh """
+                        sonar-scanner \
+                        -Dsonar.projectKey=${SONAR_PROJECT_KEY} \
+                        -Dsonar.organization=${SONAR_ORGANIZATION} \
+                        -Dsonar.sources=. \
+                        -Dsonar.host.url=https://sonarcloud.io
+                    """
+                }
+            }
+        }
+    }
 
    
 //        stage('SonarQube Analysis') {
