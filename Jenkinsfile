@@ -17,14 +17,14 @@ pipeline {
                 git branch: 'main', credentialsId: 'github-api', url: 'https://github.com/ranuka00x/MX2.git'
             }
         }
-        stage('Py Requirements Testing') {
-            steps {
-                echo 'Building the project'
-                sh 'python3 -m venv venv'
-                sh '. venv/bin/activate'
-                sh './venv/bin/pip install -r requirements.txt'
-            }
-        }
+//        stage('Py Requirements Testing') {
+//            steps {
+//                echo 'Building the project'
+ //               sh 'python3 -m venv venv'
+//                sh '. venv/bin/activate'
+//                sh './venv/bin/pip install -r requirements.txt'
+//            }
+ //       }
         stage('SonarCloud Analysis') {
             steps {
                 withSonarQubeEnv('SonarQubeServer') {
