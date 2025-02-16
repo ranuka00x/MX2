@@ -96,18 +96,30 @@ pipeline {
     post {
         always {
             echo 'Cleaning up workspace and Docker images'
-            sh '''
-                # Remove images with both local and registry-prefixed tags
-                docker images --format '{{.Repository}}:{{.Tag}}' | grep "${registry}" | xargs -r docker rmi -f || true
-                docker images --format '{{.Repository}}:{{.Tag}}' | grep "registry.hub.docker.com/${registry}" | xargs -r docker rmi -f || true
-                
-                # Remove dangling images
-                docker image prune -f
-                
-                # Keep only the last 5 versions
-                docker images --format '{{.Repository}}:{{.Tag}}' | grep "${registry}" | sort -r | tail -n +6 | xargs -r docker rmi -f || true
-            '''
-            cleanWs()
+            withCredentials([usernamePassword(credentialsId: DOCKERHUB_CREDENTIALS, passwordVariable: 'DOCKERHUB_PASSWORD', usernameVariable: 'DOCKERHUB_USERNAME')]) {
+                sh '''
+                    # Clean local images
+                    docker images --format '{{.Repository}}:{{.Tag}}' | grep "${registry}" | xargs -r docker rmi -f || true
+                    docker images --format '{{.Repository}}:{{.Tag}}' | grep "registry.hub.docker.com/${registry}" | xargs -r docker rmi -f || true
+                    docker image prune -f
+                    
+                    # Get token for Docker Hub API
+                    TOKEN=$(curl -s -H "Content-Type: application/json" -X POST -d "{\\\"username\\\": \\\"${DOCKERHUB_USERNAME}\\\", \\\"password\\\": \\\"${DOCKERHUB_PASSWORD}\\\"}" https://hub.docker.com/v2/users/login/ | jq -r .token)
+                    
+                    # Get all tags
+                    TAGS=$(curl -s -H "Authorization: JWT ${TOKEN}" https://hub.docker.com/v2/repositories/${registry}/tags?page_size=100 | jq -r '.results[].name')
+                    
+                    # Sort tags numerically and keep only tags older than last 10
+                    OLD_TAGS=$(echo "${TAGS}" | sort -nr | tail -n +11)
+                    
+                    # Delete old tags
+                    for tag in ${OLD_TAGS}; do
+                        curl -s -X DELETE -H "Authorization: JWT ${TOKEN}" https://hub.docker.com/v2/repositories/${registry}/tags/${tag}/
+                        echo "Deleted tag: ${tag}"
+                    done
+                '''
+                cleanWs()
+            }
         }
         success {
             echo 'Pipeline succeeded!'
