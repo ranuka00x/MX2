@@ -72,6 +72,7 @@ pipeline {
                     dockerimage = docker.build("${registry}:${BUILD_VERSION}")
                     // Tag the same image as latest
                     sh "docker tag ${registry}:${BUILD_VERSION} ${registry}:latest"
+                    sh "echo '${BUILD_VERSION}' > version.txt"
                 }
             }   
         }
