@@ -6,17 +6,15 @@ pipeline {
     }
     
     environment {
-        // The registry variable holds your Docker Hub repository information
         registry = 'kadawara/mx'
         DOCKERHUB_CREDENTIALS = 'dockerhub'
-        
-        // SonarCloud configuration remains the same
         SONAR_PROJECT_KEY = 'ranuka_mx'
         SONAR_SCANNER_HOME = tool 'SonarScanner'
         SONAR_ORGANIZATION = 'ranuka'
-        
-        // We'll use Jenkins' built-in BUILD_NUMBER for versioning
-        // BUILD_NUMBER is automatically provided by Jenkins
+
+        BUILD_VERSION = "${BUILD_NUMBER}"
+        TIMESTAMP = sh(script: 'date +%Y%m%d_%H%M%S', returnStdout: true).trim()
+
     }
     
     stages {
@@ -69,9 +67,11 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 script {
-                    echo "Building Docker image with build number: ${BUILD_NUMBER}"
-                    // Build the image with the build number as the tag
-                    dockerimage = docker.build("${registry}:${BUILD_NUMBER}")
+                    echo 'Building the docker image'
+                    dockerimage = docker.build("${registry}:${BUILD_VERSION}")
+
+
+
                 }
             }   
         }
@@ -79,15 +79,14 @@ pipeline {
         stage('Deploy') {
             steps {
                 script {
-                    echo "Deploying version ${BUILD_NUMBER} to Docker Hub"
+                    echo 'Deploying the project'
                     docker.withRegistry('https://registry.hub.docker.com', DOCKERHUB_CREDENTIALS) {
-                        // Push the image with the build number tag
                         dockerimage.push()
-                        
-                        // Store the deployed version number for reference
+
                         sh """
                             echo "${BUILD_NUMBER}" > .deployed-version
                         """
+
                     }
                 }
             }
@@ -97,21 +96,17 @@ pipeline {
     post {
         always {
             echo 'Cleaning up workspace and Docker images'
-            sh """
-                # Remove the local image we just built and pushed
-                docker rmi ${registry}:${BUILD_NUMBER} || true
-                
-                # Clean up any dangling images
+            sh '''
+                docker images -q ${registry} | xargs -r docker rmi || true
                 docker image prune -f
-            """
-            // Keep the .deployed-version file but clean everything else
-            cleanWs(excludePatterns: ['.deployed-version'])
+            '''
+            cleanWs()
         }
         success {
-            echo "Pipeline succeeded! Deployed version: ${BUILD_NUMBER}"
+            echo 'Pipeline succeeded!'
         }
         failure {
-            echo "Pipeline failed during version: ${BUILD_NUMBER} deployment"
+            echo 'Pipeline failed!'
         }
     }
 }
