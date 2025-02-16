@@ -68,14 +68,17 @@ pipeline {
             steps {
                 script {
                     echo 'Building the docker image.'
-                    // Build with build number tag
                     dockerimage = docker.build("${registry}:${BUILD_VERSION}")
+
                     // Tag the same image as latest
                     sh "docker tag ${registry}:${BUILD_VERSION} ${registry}:latest"
-                    sh "echo '${BUILD_VERSION}' > version.txt"
+
+                    // Verify the images created
+                    sh "docker images | grep '${registry}'"
                 }
             }   
         }
+
         
         stage('Docker image into registry') {
             steps {
