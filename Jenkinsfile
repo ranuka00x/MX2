@@ -97,8 +97,15 @@ pipeline {
         always {
             echo 'Cleaning up workspace and Docker images'
             sh '''
-                docker images -q ${registry} | xargs -r docker rmi || true
+                # Remove images with both local and registry-prefixed tags
+                docker images --format '{{.Repository}}:{{.Tag}}' | grep "${registry}" | xargs -r docker rmi -f || true
+                docker images --format '{{.Repository}}:{{.Tag}}' | grep "registry.hub.docker.com/${registry}" | xargs -r docker rmi -f || true
+                
+                # Remove dangling images
                 docker image prune -f
+                
+                # Keep only the last 5 versions
+                docker images --format '{{.Repository}}:{{.Tag}}' | grep "${registry}" | sort -r | tail -n +6 | xargs -r docker rmi -f || true
             '''
             cleanWs()
         }
