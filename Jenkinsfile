@@ -29,12 +29,21 @@ pipeline {
             steps {
                 withSonarQubeEnv('SonarQubeServer') {
                     sh """
-                         ${SONAR_SCANNER_HOME}/bin/sonar-scanner \\
+                        ${SONAR_SCANNER_HOME}/bin/sonar-scanner \\
                         -Dsonar.projectKey=${SONAR_PROJECT_KEY} \\
                         -Dsonar.organization=${SONAR_ORGANIZATION} \\
                         -Dsonar.sources=. \\
-                        -Dsonar.host.url=https://sonarcloud.io
+                        -Dsonar.host.url=https://sonarcloud.io \\
+                        -Dsonar.python.version=3 \\
+                        -Dsonar.exclusions=**/node_modules/**,**/venv/**,.git/**,**/*.pyc \\
+                        -Dsonar.sourceEncoding=UTF-8 \\
+                        -Dsonar.python.coverage.reportPaths=coverage.xml \\
+                        -Dsonar.verbose=true \\
+                        -X
                     """
+                }
+            timeout(time: 1, unit: 'MINUTES') {
+                    waitForQualityGate abortPipeline: false
                 }
             }
         }
