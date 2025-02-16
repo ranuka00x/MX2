@@ -94,7 +94,7 @@ pipeline {
 
         stage('Deploy to Production') {
             steps {
-                sshagent(credentials: ['production-ssh-key']) {
+                sshagent(credentials: ['production-server-ssh-key']) {
                     sh '''
                         ssh -o StrictHostKeyChecking=no ranuka@172.212.92.250 "echo Hello from Jenkins.."
                     '''
