@@ -104,7 +104,12 @@ pipeline {
             steps {
                 sshagent(credentials: ['production-server-ssh-key']) {
                     sh '''
-                        ssh -o StrictHostKeyChecking=no ranuka@172.212.92.250 "echo Hello from Jenkins.."
+                        ssh -o StrictHostKeyChecking=no ranuka@172.212.92.250 "
+                            cd /home/ranuka/mx2 && \
+                            docker-compose -f docker-compose-prod.yml down && \
+                            git pull && \
+                            docker-compose -f docker-compose-prod.yml up -d
+                        "
                     '''
                 }
             }

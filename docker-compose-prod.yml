@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   web:
-    image: kadawara/mx:134
+    image: kadawara/mx:latest
     container_name: mx-checker
     ports:
       - "5005:5005"
