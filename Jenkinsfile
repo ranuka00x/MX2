@@ -11,6 +11,10 @@ pipeline {
         SONAR_PROJECT_KEY = 'ranuka_mx'
         SONAR_SCANNER_HOME = tool 'SonarScanner'
         SONAR_ORGANIZATION = 'ranuka'
+
+        BUILD_VERSION = "${BUILD_NUMBER}"
+        TIMESTAMP = sh(script: 'date +%Y%m%d_%H%M%S', returnStdout: true).trim()
+
     }
     
     stages {
@@ -64,7 +68,13 @@ pipeline {
             steps {
                 script {
                     echo 'Building the docker image'
-                    dockerimage = docker.build("${registry}:latest")
+                    dockerimage = docker.build("${registry}:${BUILD_VERSION}")
+
+                    sh """
+                        docker tag ${registry}:${BUILD_VERSION} ${registry}:latest
+                        docker tag ${registry}:${BUILD_VERSION} ${registry}:${TIMESTAMP}
+                    """
+
                 }
             }   
         }
@@ -74,7 +84,8 @@ pipeline {
                 script {
                     echo 'Deploying the project'
                     docker.withRegistry('https://registry.hub.docker.com', DOCKERHUB_CREDENTIALS) {
-                        dockerimage.push('latest')
+                        dockerimage.push("${BUILD_VERSION}")
+                        dockerimage.push("latest")
                     }
                 }
             }
