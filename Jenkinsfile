@@ -29,7 +29,7 @@ pipeline {
             steps {
                 withSonarQubeEnv('SonarQubeServer') {
                     sh """
-                         ${SONAR_SCANNER_HOME}/bin/sonar-scanner \ \\
+                         ${SONAR_SCANNER_HOME}/bin/sonar-scanner \\
                         -Dsonar.projectKey=${SONAR_PROJECT_KEY} \\
                         -Dsonar.organization=${SONAR_ORGANIZATION} \\
                         -Dsonar.sources=. \\
