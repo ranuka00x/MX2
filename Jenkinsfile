@@ -29,7 +29,7 @@ pipeline {
         
         stage('Py Requirements Testing') {
             steps {
-                echo 'Setting up Python environment and installing dependencies..'
+                echo 'Setting up Python environment and installing dependencies...'
                 sh '''
                     python3 -m venv venv
                     . venv/bin/activate
