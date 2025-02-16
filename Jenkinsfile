@@ -27,21 +27,21 @@ pipeline {
         }
 
 
-    stages {
-        stage('SonarCloud Analysis') {
-            steps {
-                withSonarQubeEnv('SonarQubeServer') {
-                    sh """
-                        sonar-scanner \
-                        -Dsonar.projectKey=${SONAR_PROJECT_KEY} \
-                        -Dsonar.organization=${SONAR_ORGANIZATION} \
-                        -Dsonar.sources=. \
-                        -Dsonar.host.url=https://sonarcloud.io
-                    """
+        stages {
+            stage('SonarCloud Analysis') {
+                steps {
+                    withSonarQubeEnv('SonarQubeServer') {
+                        sh """
+                            sonar-scanner \
+                            -Dsonar.projectKey=${SONAR_PROJECT_KEY} \
+                            -Dsonar.organization=${SONAR_ORGANIZATION} \
+                            -Dsonar.sources=. \
+                            -Dsonar.host.url=https://sonarcloud.io
+                        """
+                    }
                 }
             }
         }
-    }
 
    
 //        stage('SonarQube Analysis') {
