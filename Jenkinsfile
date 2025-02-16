@@ -25,32 +25,19 @@ pipeline {
                 sh './venv/bin/pip install -r requirements.txt'
             }
         }
-
-
-        stages {
-            stage('SonarCloud Analysis') {
-                steps {
-                    withSonarQubeEnv('SonarQubeServer') {
-                        sh """
-                            sonar-scanner \
-                            -Dsonar.projectKey=${SONAR_PROJECT_KEY} \
-                            -Dsonar.organization=${SONAR_ORGANIZATION} \
-                            -Dsonar.sources=. \
-                            -Dsonar.host.url=https://sonarcloud.io
-                        """
-                    }
+        stage('SonarCloud Analysis') {
+            steps {
+                withSonarQubeEnv('SonarQubeServer') {
+                    sh """
+                        sonar-scanner \\
+                        -Dsonar.projectKey=${SONAR_PROJECT_KEY} \\
+                        -Dsonar.organization=${SONAR_ORGANIZATION} \\
+                        -Dsonar.sources=. \\
+                        -Dsonar.host.url=https://sonarcloud.io
+                    """
                 }
             }
         }
-
-   
-//        stage('SonarQube Analysis') {
-//            def scannerHome = tool 'mysonar';
-//            withSonarQubeEnv() {
-//            sh "${scannerHome}/bin/sonar-scanner"
-//            }
-//        }
-
         stage('Build Docker Image') {
             steps {
                 script {
