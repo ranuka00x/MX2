@@ -89,6 +89,7 @@ pipeline {
 
                         sh """
                             echo "${BUILD_NUMBER}" > .deployed-version
+                            echo "${BUILD_NUMBER}" > build.txt
                         """
                     }
                 }
