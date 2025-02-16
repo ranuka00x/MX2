@@ -81,9 +81,11 @@ pipeline {
                 script {
                     echo 'Deploying the project'
                     docker.withRegistry('https://registry.hub.docker.com', DOCKERHUB_CREDENTIALS) {
-                        // Push both tags
-                        dockerimage.push()
-                        docker.image("${registry}:latest").push()
+                        // Push the version tag
+                        dockerimage.push("${BUILD_VERSION}")
+                        
+                        // Push the latest tag explicitly
+                        dockerimage.push("latest")
 
                         sh """
                             echo "${BUILD_NUMBER}" > .deployed-version
