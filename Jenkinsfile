@@ -113,7 +113,9 @@ pipeline {
     
     post {
         always {
-            echo 'Cleaning up workspace and Docker images'
+            echo 'Waiting 2 minutes before cleanup...'
+            sh 'sleep 120' // 120 seconds = 2 minutes
+            echo 'Starting cleanup of workspace and Docker images'
             withCredentials([usernamePassword(credentialsId: DOCKERHUB_CREDENTIALS, passwordVariable: 'DOCKERHUB_PASSWORD', usernameVariable: 'DOCKERHUB_USERNAME')]) {
                 sh '''
                     # Clean local images after pushing
