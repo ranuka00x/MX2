@@ -41,7 +41,7 @@ pipeline {
         
         stage('SonarCloud Analysis') {
             options {
-                timeout(time: 5, unit: 'MINUTES')
+                timeout(time: 3, unit: 'MINUTES')  // Reduced timeout since we're scanning less
             }
             steps {
                 catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
@@ -54,10 +54,17 @@ pipeline {
                             -Dsonar.host.url=https://sonarcloud.io \\
                             -Dsonar.python.version=3 \\
                             -Dsonar.inclusions=**/*.py,**/*.html,**/*.css \\
-                            -Dsonar.exclusions=**/venv/**,.git/**,**/*.pyc,**/__pycache__/** \\
+                            -Dsonar.exclusions=**/venv/**,.git/**,**/*.pyc,**/__pycache__/**,tests/** \\
                             -Dsonar.sourceEncoding=UTF-8 \\
                             -Dsonar.scanner.force-deprecated-java-version=true \\
-                            -Dsonar.scanner.skipSystemTruststore=true
+                            -Dsonar.scanner.skipSystemTruststore=true \\
+                            -Dsonar.scm.disabled=true \\
+                            -Dsonar.javascript.enabled=false \\
+                            -Dsonar.java.enabled=false \\
+                            -Dsonar.php.enabled=false \\
+                            -Dsonar.typescript.enabled=false \\
+                            -Dsonar.coverage.exclusions=tests/** \\
+                            -Dsonar.log.level=INFO
                         """
                     }
                 }
