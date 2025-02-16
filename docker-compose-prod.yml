@@ -1,0 +1,19 @@
+version: '3.8'
+
+services:
+  web:
+    image: yourusername/mx-checker:latest
+    container_name: mx-checker
+    ports:
+      - "5005:5005"
+    environment:
+      - FLASK_APP=app.py
+      - FLASK_ENV=production
+      - PYTHONUNBUFFERED=1
+    restart: unless-stopped
+    networks:
+      - mx-network
+
+networks:
+  mx-network:
+    driver: bridge

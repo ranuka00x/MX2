@@ -68,10 +68,10 @@ pipeline {
             steps {
                 script {
                     echo 'Building the docker image.'
+                    // Build with build number tag
                     dockerimage = docker.build("${registry}:${BUILD_VERSION}")
-
-
-
+                    // Tag the same image as latest
+                    sh "docker tag ${registry}:${BUILD_VERSION} ${registry}:latest"
                 }
             }   
         }
@@ -81,12 +81,13 @@ pipeline {
                 script {
                     echo 'Deploying the project'
                     docker.withRegistry('https://registry.hub.docker.com', DOCKERHUB_CREDENTIALS) {
+                        // Push both tags
                         dockerimage.push()
+                        docker.image("${registry}:latest").push()
 
                         sh """
                             echo "${BUILD_NUMBER}" > .deployed-version
                         """
-
                     }
                 }
             }
