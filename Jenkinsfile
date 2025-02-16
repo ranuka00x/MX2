@@ -6,15 +6,17 @@ pipeline {
     }
     
     environment {
+        // The registry variable holds your Docker Hub repository information
         registry = 'kadawara/mx'
         DOCKERHUB_CREDENTIALS = 'dockerhub'
+        
+        // SonarCloud configuration remains the same
         SONAR_PROJECT_KEY = 'ranuka_mx'
         SONAR_SCANNER_HOME = tool 'SonarScanner'
         SONAR_ORGANIZATION = 'ranuka'
-
-        BUILD_VERSION = "${BUILD_NUMBER}"
-        TIMESTAMP = sh(script: 'date +%Y%m%d_%H%M%S', returnStdout: true).trim()
-
+        
+        // We'll use Jenkins' built-in BUILD_NUMBER for versioning
+        // BUILD_NUMBER is automatically provided by Jenkins
     }
     
     stages {
@@ -67,14 +69,9 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 script {
-                    echo 'Building the docker image'
-                    dockerimage = docker.build("${registry}:${BUILD_VERSION}")
-
-                    sh """
-                        docker tag ${registry}:${BUILD_VERSION} ${registry}:latest
-                        docker tag ${registry}:${BUILD_VERSION} ${registry}:${TIMESTAMP}
-                    """
-
+                    echo "Building Docker image with build number: ${BUILD_NUMBER}"
+                    // Build the image with the build number as the tag
+                    dockerimage = docker.build("${registry}:${BUILD_NUMBER}")
                 }
             }   
         }
@@ -82,10 +79,15 @@ pipeline {
         stage('Deploy') {
             steps {
                 script {
-                    echo 'Deploying the project'
+                    echo "Deploying version ${BUILD_NUMBER} to Docker Hub"
                     docker.withRegistry('https://registry.hub.docker.com', DOCKERHUB_CREDENTIALS) {
-                        dockerimage.push("${BUILD_VERSION}")
-                        dockerimage.push("latest")
+                        // Push the image with the build number tag
+                        dockerimage.push()
+                        
+                        // Store the deployed version number for reference
+                        sh """
+                            echo "${BUILD_NUMBER}" > .deployed-version
+                        """
                     }
                 }
             }
@@ -95,17 +97,21 @@ pipeline {
     post {
         always {
             echo 'Cleaning up workspace and Docker images'
-            sh '''
-                docker images -q ${registry} | xargs -r docker rmi || true
+            sh """
+                # Remove the local image we just built and pushed
+                docker rmi ${registry}:${BUILD_NUMBER} || true
+                
+                # Clean up any dangling images
                 docker image prune -f
-            '''
-            cleanWs()
+            """
+            // Keep the .deployed-version file but clean everything else
+            cleanWs(excludePatterns: ['.deployed-version'])
         }
         success {
-            echo 'Pipeline succeeded!'
+            echo "Pipeline succeeded! Deployed version: ${BUILD_NUMBER}"
         }
         failure {
-            echo 'Pipeline failed!'
+            echo "Pipeline failed during version: ${BUILD_NUMBER} deployment"
         }
     }
 }
