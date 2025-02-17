@@ -29,7 +29,7 @@ pipeline {
         }
 
 
-        stage('Deploy to Kubernetes') {
+        stage('Check Kubernetes connection') {
             steps {
                 withKubeConfig([credentialsId: 'kubernetes-config',
                                serverUrl: 'https://35.232.162.143']) {
@@ -87,7 +87,7 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 script {
-                    echo 'Building the docker image.'
+                    echo 'Building the docker image..'
                     dockerimage = docker.build("${registry}:${BUILD_VERSION}")
 
                     // Tag the same image as latest
