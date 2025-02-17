@@ -26,6 +26,20 @@ pipeline {
                     url: 'https://github.com/ranuka00x/MX2.git'
             }
         }
+
+
+        stage('Deploy to Kubernetes') {
+            steps {
+                container('kubectl') {
+                    withKubeConfig([credentialsId: 'kubernetes-config']) {
+                        sh 'kubectl get pods'
+                        // Add your deployment commands here
+                    }
+                }
+            }
+        }
+
+
         
         stage('Py Requirements Testing') {
             steps {
