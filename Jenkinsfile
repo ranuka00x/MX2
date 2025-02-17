@@ -28,6 +28,16 @@ pipeline {
             }
         }
 
+        stage('install argocd') {
+            steps {
+                sh '''
+                    curl -sSL -o /usr/local/bin/argocd https://github.com/argoproj/argo-cd/releases/latest/download/argocd-linux-amd64
+                    chmod +x /usr/local/bin/argocd
+                    argocd login 34.72.142.43 --username admin --password p@ssw0rdwac123 --insecure
+                    aegocd app sync testapp
+                '''
+            }
+        }
 
         stage('Check Kubernetes connection') {
             steps {
