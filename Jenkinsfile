@@ -28,16 +28,16 @@ pipeline {
         }
 
 
-        stage('Deploy to Kubernetes') {
-            steps {
-                container('kubectl') {
-                    withKubeConfig([credentialsId: 'kubernetes-config']) {
-                        sh 'kubectl get pods'
-                        // Add your deployment commands here
-                    }
-                }
+    stage('Deploy to Kubernetes') {
+        steps {
+            withKubeConfig([credentialsId: 'kubernetes-config',serverUrl: 'https://35.232.162.143',contextName: 'gke_k8demonew_us-central1_k8demonew-cluster']) {
+            sh '''
+                kubectl get nodes
+                kubectl get pods
+            '''
             }
         }
+    }
 
 
         
