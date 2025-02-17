@@ -14,6 +14,7 @@ pipeline {
 
         BUILD_VERSION = "${BUILD_NUMBER}"
         TIMESTAMP = sh(script: 'date +%Y%m%d_%H%M%S', returnStdout: true).trim()
+        USE_GKE_GCLOUD_AUTH_PLUGIN = 'True'
 
     }
     
@@ -28,16 +29,21 @@ pipeline {
         }
 
 
-    stage('Deploy to Kubernetes') {
-        steps {
-            withKubeConfig([credentialsId: 'kubernetes-config',serverUrl: 'https://35.232.162.143',contextName: 'gke_k8demonew_us-central1_k8demonew-cluster']) {
-            sh '''
-                kubectl get nodes
-                kubectl get pods
-            '''
+        stage('Deploy to Kubernetes') {
+            steps {
+                withKubeConfig([credentialsId: 'kubernetes-config',
+                               serverUrl: 'https://35.232.162.143']) {
+                    sh '''
+                        # Verify the plugin is installed
+                        which gke-gcloud-auth-plugin
+                        
+                        # Your deployment commands
+                        kubectl get nodes
+                        kubectl get pods
+                    '''
+                }
             }
         }
-    }
 
 
         
