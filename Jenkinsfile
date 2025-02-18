@@ -56,6 +56,33 @@ pipeline {
         }
 
 
+        stage('Py Requirements Testing1') {
+            agent {
+                docker {
+                    image 'python:3.9-slim'
+                    reuseNode true
+                    args '-v ${WORKSPACE}:/app'
+                }
+            }
+            steps {
+                sh '''
+                    cd /app
+                    python -m venv venv
+                    . venv/bin/activate
+                    pip install --upgrade pip
+                    pip install -r requirements.txt
+                '''
+            }
+            post {
+                always {
+                    sh '''
+                        rm -rf venv
+                        pip cache purge || true
+                    '''
+                }
+            }
+        }
+
         
         stage('Py Requirements Testing') {
             steps {
