@@ -137,7 +137,8 @@ pipeline {
                             cd /home/ranuka/mx2 && \
                             docker-compose -f docker-compose-prod.yml down && \
                             git pull && \
-                            docker-compose -f docker-compose-prod.yml up -d
+                            docker-compose -f docker-compose-prod.yml up -d && \
+                            docker image prune -f
                         "
                     '''
                 }
